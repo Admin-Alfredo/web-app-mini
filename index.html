@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CALCULADORA</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      box-sizing: border-box;
+      height: 100vh;
+      width: 100%;
+      background: linear-gradient(#A8FF78, #78FFD6);
+    }
+
+    .calculator {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 320px;
+      box-shadow: 0px 5px 15px #1fe080, 0px -5px 15px #44fa6b;
+      border-radius: 15px 15px 0px 0px;
+      position: absolute;
+	  overflow: hidden;
+    }
+
+    .calculator__keys {
+      display: grid;
+      grid-row: 5;
+      grid-template-columns: 80px 80px 80px 80px;
+      grid-template-rows: 50px 50px 50px 50px 50px;
+      border-radius: 0px 0px 15px 15px;
+    }
+
+    .calculator_header {
+      box-sizing: border-box;
+      border-radius: 15px 15px 0px 0px;
+      height: 45px;
+      background: linear-gradient(#eee, #ddd, #eee);
+      width: 100%;
+      padding-left: 10px;
+      padding-top: 5px;
+      text-shadow: 2px 1px 0px #aaa;
+      font-size: 18pt;
+      cursor: move;
+      user-select: none;
+    }
+
+    .calculator__display {
+      width: 100%;
+      height: 80px;
+      color: white;
+      background-color: black;
+      font-size: 34pt;
+      font-weight: 700;
+      text-align: right;
+
+      /* padding: 5px; */
+
+    }
+
+    button {
+      border: none;
+      outline: none;
+      border: 1px solid #ccc;
+      background-color: white;
+      font-weight: 500;
+      font-size: 24pt;
+      color: #888;
+    }
+
+    button:hover {
+      background-color: #ddd;
+    }
+
+    button.key__operator {
+      background-color: #eee;
+    }
+
+    button.is-depressed {
+      background-color: darkslategrey;
+      color: wheat;
+    }
+
+    button.key__equal {
+      grid-row: 5 /2;
+      /* ocupa 6 linhas comesando da 1 */
+      grid-column: 4/5;
+
+      background-color: #ef7d39;
+      color: black;
+    }
+
+    button.key_zero {
+      border-radius: 0px 0px 0px 15px;
+    }
+
+    .key_clear-all {
+      border-radius: 0px 0px 15px 0px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="calculator">
+    <div class="calculator_header">calculadora</div>
+    <div class="calculator__display">0</div>
+    <div class="calculator__keys">
+      <button class="key__operator" data-action="add">+</button>
+      <button class="key__operator" data-action="subtract">-</button>
+      <button class="key__operator" data-action="multiply">X</button>
+      <button class="key__operator" data-action="devide">/</button>
+      <button>7</button>
+      <button>8</button>
+      <button>9</button>
+      <button>4</button>
+      <button>5</button>
+      <button>6</button>
+      <button>1</button>
+      <button>2</button>
+      <button>3</button>
+      <button class="key_zero">0</button>
+      <button data-action="decimal">.</button>
+      <button data-action="clear">C</button>
+      <button class="key_clear-all" data-action="clearAll">AC</button>
+      <button class="key__equal" data-action="calculate">=</button>
+    </div>
+  </div>
+  <script>
+    const calculator = document.querySelector('.calculator')
+    const keys = calculator.querySelector('.calculator__keys')
+    const display = calculator.querySelector('.calculator__display')
+    const operationsList = ["add", "subtract", "multiply", "devide"]
+    const header = document.querySelector('.calculator_header')
+    const calculatorPositionAndDimension = function () {
+      return {
+        x: calculator.getBoundingClientRect().x,
+        y: calculator.getBoundingClientRect().y,
+        width: calculator.getBoundingClientRect().width,
+        height: calculator.getBoundingClientRect().height
+      }
+    }
+    keys.addEventListener('click', function (e) {
+      if (e.target.matches('button')) {
+        const key = e.target
+        const action = key.dataset.action
+        const keyContent = key.textContent
+        const displayedNum = display.textContent
+
+        Array.from(key.parentNode.children).forEach(k => k.classList.remove('is-depressed'))
+
+        if (!action) {
+          console.log("number key!")
+          if (displayedNum == '0' || calculator.dataset.previusKeyType == 'operator') {
+            display.textContent = keyContent
+            calculator.dataset.previusKeyType = ""
+
+          } else {
+            display.textContent = `${displayedNum}${keyContent}`
+          }
+        }
+        if (operationsList.includes(action)) {
+          console.log("operator keys")
+          key.classList.add('is-depressed')
+          calculator.dataset.firstValue = displayedNum
+          calculator.dataset.operator = action
+          calculator.dataset.previusKeyType = "operator"
+        }
+        if (!(EspecialOperations[action] instanceof Function))
+          return 0
+        EspecialOperations[action].apply({ displayedNum })
+
+      }
+    })
+    const EspecialOperations = {
+      clear: () => display.textContent = '0',
+      decimal() {
+        if (!display.textContent.includes('.')) {
+          display.textContent = `${this.displayedNum}.`
+        }
+      },
+      calculate() {
+        const secandValue = this.displayedNum
+        const firstValue = calculator.dataset.firstValue
+        const operator = calculator.dataset.operator
+
+        display.textContent = Calculator(Number(firstValue), Number(secandValue), operator)
+        calculator.dataset.previusResultValue = display.textContent
+      },
+    }
+    const Calculator = (firstValue, secandValue, operator) => {
+      if (!(MathOperations[operator] instanceof Function)) {
+        return 0
+      }
+      return MathOperations[operator](firstValue, secandValue)
+    }
+    const MathOperations = {
+      add: (x, y) => x + y,
+      subtract: (x, y) => x - y,
+      multiply: (x, y) => x * y,
+      devide: (x, y) => x / y
+    }
+
+
+    calculator.style.transform = `
+      translateX(-50%) 
+      translateY(-2%)`
+
+    window.addEventListener('mousemove', function (e) {
+      let positionRelativeMouseX = e.clientX - calculatorPositionAndDimension().x
+      let positionRelativeMouseY = e.clientY - calculatorPositionAndDimension().y
+
+      if (e.clientX > calculatorPositionAndDimension().x &&
+        e.clientX < calculatorPositionAndDimension().x + calculatorPositionAndDimension().width) {
+        console.log("Hello", positionRelativeMouseX)
+
+        if (document.body.dataset.mouseDown == "true") {
+          calculator.style.left = e.clientX + 'px'
+          calculator.style.top = e.clientY + 'px'
+        }
+      }
+    })
+
+    window.addEventListener('mouseup', () => document.body.dataset.mouseDown = false)
+    window.addEventListener('mousedown', () => document.body.dataset.mouseDown = true)
+
+  </script>
+</body>
+
+</html>
